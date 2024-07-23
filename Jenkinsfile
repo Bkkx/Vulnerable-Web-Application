@@ -6,7 +6,8 @@ pipeline {
     }
 
     tools {
-        sonarQube 'SonarQube' // This should match the name of the SonarQube Scanner tool configuration
+        // Correct tool type for SonarQube
+        sonarScanner 'SonarQube'
     }
 
     stages {
