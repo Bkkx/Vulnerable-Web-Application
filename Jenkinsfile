@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        SONARQUBE_URL = 'http://sonarqube:9000'  // Use the container name here
+        SONARQUBE_URL = 'http://sonarqube:9000'
     }
     stages {
         stage ('Checkout') {
@@ -12,7 +12,7 @@ pipeline {
         stage ('Code Quality Check via SonarQube') {
             steps {
                 script {
-                    def scannerHome = tool name: 'SonarQube', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    def scannerHome = tool 'SonarQube';
                     withSonarQubeEnv('SonarQube') {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=OWASP -Dsonar.sources=. -Dsonar.host.url=${SONARQUBE_URL}"
                     }
@@ -22,13 +22,7 @@ pipeline {
     }
     post {
         always {
-            script {
-                try {
-                    waitForQualityGate abortPipeline: true
-                } catch (Exception e) {
-                    echo "Quality gate did not pass: ${e.message}"
-                }
-            }
+            recordIssues enabledForFailure: true, tool: sonarQube()
         }
     }
 }
