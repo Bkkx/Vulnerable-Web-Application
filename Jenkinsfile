@@ -1,28 +1,42 @@
 pipeline {
     agent any
+
     environment {
-        SONARQUBE_URL = 'http://sonarqube:9000'
+        SONARQUBE_TOKEN = credentials('sonarqube') // Using the ID 'sonarqube' for the secret text token
     }
+
+    tools {
+        sonarQube 'SonarQube' // This should match the name of the SonarQube Scanner tool configuration
+    }
+
     stages {
-        stage ('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'master', url: 'https://github.com/bkkx/Vulnerable-Web-Application.git'
+                git url: 'https://github.com/Bkkx/Vulnerable-Web-Application.git'
             }
         }
-        stage ('Code Quality Check via SonarQube') {
+
+        stage('Code Quality Check via SonarQube') {
+            environment {
+                scannerHome = tool name: 'SonarQube', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+            }
             steps {
-                script {
-                    def scannerHome = tool 'SonarQube';
-                    withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=OWASP -Dsonar.sources=. -Dsonar.host.url=${SONARQUBE_URL}"
-                    }
+                withSonarQubeEnv('SonarQube') { 
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=OWASP -Dsonar.sources=. -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=${SONARQUBE_TOKEN}"
                 }
             }
         }
     }
+
     post {
         always {
-            recordIssues enabledForFailure: true, tool: sonarQube()
+            script {
+                try {
+                    waitForQualityGate abortPipeline: true
+                } catch (Exception e) {
+                    echo "Quality Gate failed: ${e.message}"
+                }
+            }
         }
     }
 }
