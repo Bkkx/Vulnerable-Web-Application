@@ -22,13 +22,7 @@ pipeline {
     }
     post {
         always {
-            script {
-                try {
-                    waitForQualityGate abortPipeline: true
-                } catch (Exception e) {
-                    echo "Quality gate did not pass: ${e.message}"
-                }
-            }
+            recordIssues enabledForFailure: true, tool: SonarQube()
         }
     }
 }
